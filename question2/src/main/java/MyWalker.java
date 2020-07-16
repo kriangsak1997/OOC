@@ -1,150 +1,135 @@
 import org.apache.commons.cli.*;
-import jdk.jfr.internal.Options;
+//import jdk.jfr.internal.Options;
 import org.apache.commons.io.DirectoryWalker;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MyWalker extends DirectoryWalker {
-    private int countFiles;
-    private int countDirectories;
-    private Map<String, Integer> extensions = new HashMap<>();
-    Options options = new Options();
 
-    private CommandLine commandLine;
-    private CommandLineParser commandLineParser;
+    private boolean hasA;
+    private boolean hasB;
+    private boolean hasC;
+    private boolean hasD;
+    private boolean hasE;
+    private String targetExt;
+    private File startingDir;
 
-    private Boolean hasA = false;
-    private Boolean hasB = false;
-    private Boolean hasC = false;
-    private Boolean hasD = false;
-    private Boolean hasExt = false;
-    private Boolean hasF = false;
-    private Boolean hasH = false;
+    private int numFile;
+    private int numDir;
+    private  Map<String, Integer> extentions = new HashMap<String, Integer>();
 
-    public  MyWalker(){
+    public MyWalker(){
         super();
-        this.commandLineParser = new DefaultParser();
-        this.options.addOption("a", "total-num-files", false, "The total number of files.");
-        this.options.addOption("b", "total-num-dirs", false, "Total number of directory.");
-        this.options.addOption("c", "total-unique-exts", false, "Total number of unique file extensions.");
-        this.options.addOption("d", "list-exts", false, "List all unique file extensions.");
-        this.options.addOption("h", "help", false, "List all available arguments.");
-
-        Option extensionNumOption = Option.builder("e")
-                .longOpt("num-ext").argName("EXT").hasArg().desc("List total number of file for specified extension EXT.")
-                .valueSeparator('=').build();
-
-        Option pathOption = Option.builder("f")
-                .valueSeparator('=')
-                .argName("path-to-folder").hasArg().desc("Path to the documentation folder. This is a required argument.")
-                .build();
-
-        this.options.addOption(extensionNumOption);
-        this.options.addOption(pathOption);
     }
 
-    public void run(String[] args){
-        takeArguments(args);
-        MyActualWalker();
-        printer();
-    }
-
-    private void takeArguments(String[] args){
-        try {
-            commandLine = commandLineParser.parse(options,args);
-        } catch (ParseException e) {
-            System.out.println("Incorrect arguments.");
-            printer();
-            System.exit(1);
+    public void start(){
+        try{
+            walk(startingDir,null);
+        }catch (IOException e){
+            e.printStackTrace();
         }
-        if(commandLine.hasOption("a")) hasA = true;
-        if(commandLine.hasOption("b")) hasB = true;
-        if(commandLine.hasOption("c")) hasC = true;
-        if(commandLine.hasOption("d")) hasD = true;
-        if(commandLine.hasOption("e")) hasExt = true;
-        if(commandLine.hasOption("f")) hasF = true;
-        if(commandLine.hasOption("h")) hasH = true;
-        if(hasH){
-            printer();
-            System.exit(0);
-        }
+
     }
 
-    public void MyActualWalker() {
-        if(hasF){
-            try{
-                //Hard coded the path
-                walk(new File(commandLine.getOptionValue("f")), null);
-            } catch (IOException e) {
-                e.printStackTrace();
+    public void printResults(){
+        printNumFile();
+        printNumDir();
+        printNumUnique();
+        printListFileExt();
+        printFilesForEachExt(this.targetExt);
+    }
+    public void setHasA(boolean hasA) {
+        this.hasA = hasA;
+    }
+
+    public void setHasB(boolean hasB) {
+        this.hasB = hasB;
+    }
+
+    public void setHasC(boolean hasC) {
+        this.hasC = hasC;
+    }
+
+    public void setHasD(boolean hasD) {
+        this.hasD = hasD;
+    }
+
+    public void setHasE(boolean hasE) {
+        this.hasE = hasE;
+    }
+
+    public void setTargetExt(String targetExt) {
+        this.targetExt = targetExt;
+    }
+    public void setStartingDir(String startingDir) throws FileNotFoundException{
+        this.startingDir = new File(startingDir);
+        if(!this.startingDir.exists()|| !this.startingDir.isDirectory()){
+            throw new FileNotFoundException("Unable to locate the directory");
+        }
+    }
+    @Override
+    protected boolean handleDirectory( File directory, int depth, Collection results){
+        if(hasB){
+            numDir++;
+        }
+        return  true;
+    }
+
+    @Override
+    protected void handleFile(File file, final int depth, final Collection results){
+        if(hasA){
+            numFile++;
+        }
+        if(hasC || hasD || hasE){
+            String ext = FilenameUtils.getExtension(file.getName());
+            if(ext.equals("")) ext = "File";
+            if(!extentions.containsKey(ext)){
+                extentions.put(ext,1);
+            }else{
+                int val = extentions.get(ext);
+                extentions.put(ext,val+1);
             }
-        }else{
-            System.out.println("Given path is wrong, please retype your arguments and try again.");
-            printer();
-            System.exit(1);
-        }
-    }
-
-    @Override
-    protected void handleFile(File file, int depth, Collection results) {
-        countFiles++;
-        String ext = FilenameUtils.getExtension(String.valueOf(file));
-        if (!extensions.containsKey(ext)) {
-            extensions.put(ext, 1);
-        } else {
-            extensions.put(ext, extensions.get(ext) + 1);
         }
     }
 
 
-    @Override
-    protected boolean handleDirectory(File directory, int depth, Collection results) throws IOException {
-        countDirectories++;
-        return true;
-    }
-
-    private void printNumFiles() {
-        System.out.println("Total number of files: " + countFiles);
-    }
-
-    private void printNumDirectories() {
-        System.out.println("Total number of directories: " + countDirectories);
-    }
-
-    private void printNumUniques() {
-        System.out.println("Total number of unique extensions: " + extensions.size());
-    }
-
-    private void printUnique() {
-        System.out.println("Unique extensions and the respective counts");
-        for (String ext : extensions.keySet()) {
-            System.out.println(ext + " : " + extensions.get(ext));
+    private void printFilesForEachExt(String targetExt) {
+        if(hasE){
+            System.out.println(targetExt + extentions.get(targetExt));
         }
     }
-    private void printer(){
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp("WalkerCLI",options);
+
+    private void printListFileExt() {
+        if(hasD){
+            for (String ext: extentions.keySet()){
+                System.out.println(ext);
+            }
+        }
     }
 
-    public void go() {
+    private void printNumUnique() {
+        if(hasC){
+            System.out.println("Total number of unique extensions: " + extentions.size());
+        }
 
-        printNumFiles();
-        System.out.println(" ");
+    }
 
+    private void printNumDir() {
+        if(hasB){
+            System.out.println("Total number of directories: " + numDir);
+        }
+    }
 
-        printNumDirectories();
-
-        System.out.println(" ");
-        printNumUniques();
-
-        System.out.println(" ");
-        printUnique();
-        System.out.println(" ");
+    private void printNumFile() {
+        if(hasA){
+            System.out.println("Total number of files: " + numFile);
+        }
 
     }
 
