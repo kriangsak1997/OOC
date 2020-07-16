@@ -11,7 +11,7 @@ public class MyWalker extends DirectoryWalker {
     private int countFiles;
     private int countDirectories;
     private Map<String, Integer> extensions = new HashMap<>();
-    private String path = "/Users/kriangsak1997/Documents/MUIC/Term9/ICCS330_OOC/Assignments/hw1/q1/docs/";
+    private String path = "/Users/kriangsak1997/Documents/MUIC/Term9/ICCS330_OOC/Assignments/homework1/question1/docs/";
 
 
     public MyWalker() {
